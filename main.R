@@ -1,8 +1,7 @@
 install.packages("dplyr")
 library(dplyr)
 
-#import data set as "df" (i formatted my own file a bit)
-#skip first column
+#import data set as "df", file name (df.csv) (i formatted my own file by adding a column to format date as "yyyy-mm-dd"), skipped first column (date formatted as "yyyymmdd")
 library(readr)
 df <- read_csv("df.csv", col_types = cols(...1 = col_skip()))
 View(df)
