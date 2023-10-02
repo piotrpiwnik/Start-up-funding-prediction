@@ -1,9 +1,13 @@
 library(dplyr)
 library(quantmod)
 library(glmnet)
-getwd()
-setwd("C:/Users/swiet/OneDrive/Pulpit/Study/Exchange/Predictive Analytics")
-df <- read.csv("./portfolio.data.csv")
+library(readr)
+
+# Specify the URL of the CSV file on GitHub
+github_url <- "https://raw.githubusercontent.com/username/repositoryname/main/portfolio.data.csv"
+
+# Use read_csv to directly read the CSV file from the GitHub URL into a data frame
+df <- read_csv(url(github_url))
 
 #Mutating data - dates
 df$X <- as.Date(df$X, format = "%Y%m%d")
