@@ -29,18 +29,22 @@ View(df)
 df$X <- as.Date(df$X, format = "%Y%m%d")
 df$X <- format(df$X, "%Y-%m-%d")
 
-#View(df)
+View(df)
+# The data contains four tables. We only need the first one.
+# Subset the dataframe from the beginning to 25566 exclusive. 2022-12-30 is the 25399th row as in the project description.
+df <- df[1:25566, ]
+View(df)
 
 #Formating the Return Matrix, excluding the first column (date)
 returnMatrix <- df[,-1]
 returnMatrix <- as.matrix(returnMatrix)
-dim(returnMatrix) #dimension: 102184 x 100
+dim(returnMatrix) #Now the dimension: is 25566 x 100
 
 #Store Numbers of Observations and Assets (for dimensions of matrices)
 num_day <- dim(returnMatrix)[1]
 num_asset <- dim(returnMatrix)[2]
 
-#Demean the return matrix (Demean outside the for loop or inside? This is outside)
+#Demean the return matrix (Demean outside the for loop or inside? This is outside). I think it does not matter/ Piotr
 demeaned_return <- scale(as.numeric(returnMatrix), center = TRUE, scale = FALSE)
 demeaned_return <- matrix(demeaned_return, nrow = num_day, byrow = TRUE)
 #dim(demeaned_return) --> the same dimension as the original matrix
@@ -87,7 +91,7 @@ for(i in 1: num_windows){
   X_matrix <- window_R %*% N_matrix #dimension (252x99)
   
   #Predict y = X.beta without intercept
-  OLS <- lm(y~ 0 + X_matrix)
+  OLS <- lm(Y_matrix ~ 0 + X_matrix)
   beta <- coef(OLS) 
   
   #MinVar portfolio: w = wEW - N.beta (matrix multiplication)
@@ -110,6 +114,8 @@ example_Y <- example_R %*% wEW   #dimension 252 x1
 example_X <- example_R %*% N_matrix #dimension 252x99 (252x100 x 100x99)
 model <- lm(example_Y ~ 0 + example_X) #ERROR here (there are some NAs and I cant find the reason for it)
 beta <- coef(model)
+
+
 ...
 #then calculate the return somehow
 #(From project: This portfolio’s return on 2023-01-03 is 0.366)
