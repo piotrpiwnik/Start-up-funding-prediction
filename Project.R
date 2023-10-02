@@ -1,17 +1,34 @@
-library(dplyr)
-library(quantmod)
-library(glmnet)
-library(readr)
+# Load necessary libraries
+packages <- c( "dplyr",
+               "quantmod",
+               "glmnet",  
+               "here")
 
-# Specify the URL of the CSV file on GitHub
-github_url <- "https://raw.githubusercontent.com/username/repositoryname/main/portfolio.data.csv"
+# Check if packages are installed
+packages_to_install <- packages[!packages %in% installed.packages()[,"Package"]]
 
-# Use read_csv to directly read the CSV file from the GitHub URL into a data frame
-df <- read_csv(url(github_url))
+# Install packages if not already installed
+if(length(packages_to_install)) install.packages(packages_to_install, repos = "https://cloud.r-project.org/")
+
+# Load packages
+lapply(packages, require, character.only = TRUE)
+
+#####----------------------------------------------------------------------#####
+
+
+# Set the working directory to the project root using here()
+setwd(here())
+
+# Read the CSV file using here() to construct the file path
+df <- read.csv(here("portfolio.data.csv"))
+View(df)
+
+#####----------------------------------------------------------------------#####
 
 #Mutating data - dates
 df$X <- as.Date(df$X, format = "%Y%m%d")
 df$X <- format(df$X, "%Y-%m-%d")
+
 #View(df)
 
 #Formating the Return Matrix, excluding the first column (date)
