@@ -35,6 +35,8 @@ View(df)
 df <- df[1:25566, ]
 View(df)
 
+#####----------------------------------------------------------------------#####
+
 #Formating the Return Matrix, excluding the first column (date)
 returnMatrix <- df[,-1]
 returnMatrix <- as.matrix(returnMatrix)
@@ -61,6 +63,8 @@ N_matrix <- rbind(N_matrix, rep(-1,99))
 window_size <- 252
 num_windows <- num_day - window_size +1 
 
+#####----------------------------------------------------------------------#####
+
 
 # Function to calculate betas using Lasso or Ridge regression
 calculate_betas <- function(X, y, alpha) {
@@ -76,6 +80,8 @@ calculate_portfolio_weights <- function(betas, N, we) {
   w_portfolio <- we - N %*% betas
   return(w_portfolio)
 }
+
+#####----------------------------------------------------------------------#####
 
 
 #For loop for rolling/sliding window
@@ -108,14 +114,62 @@ for(i in 1: num_windows){
   
 }
 
-#Example of 2023-01-03 to test the code
-example_R <- demeaned_return[1:252,] #dimension 252x100
-example_Y <- example_R %*% wEW   #dimension 252 x1 
-example_X <- example_R %*% N_matrix #dimension 252x99 (252x100 x 100x99)
-model <- lm(example_Y ~ 0 + example_X) #ERROR here (there are some NAs and I cant find the reason for it)
-beta <- coef(model)
+#####----------------------------------------------------------------------#####
+
+# Extract coefficients from OLS model
+ols_coefficients <- coef(model)
+# Extract residuals from OLS model
+ols_residuals <- residuals(model)
+# Get summary statistics of OLS model
+ols_summary <- summary(model)
+
+# Assuming you have calculated betas_lasso and betas_ridge using calculate_betas function
+
+# Extract coefficients from Lasso and Ridge models
+lasso_coefficients <- betas_lasso
+ridge_coefficients <- betas_ridge
 
 
-...
-#then calculate the return somehow
+# Calculate daily portfolio return
+daily_portfolio_return <- sum(weights * asset_returns)
+
+# Assuming previous_portfolio_value is the portfolio value from the previous day
+# Calculate total portfolio value for the specific date
+total_portfolio_value <- previous_portfolio_value * (1 + daily_portfolio_return)
+
+
+# Log OLS model information
+print("OLS Coefficients:")
+print(ols_coefficients)
+print("OLS Residuals:")
+print(ols_residuals)
+print("OLS Summary:")
+print(ols_summary)
+
+# Log Lasso and Ridge coefficients
+print("Lasso Coefficients:")
+print(lasso_coefficients)
+print("Ridge Coefficients:")
+print(ridge_coefficients)
+
+# Log Portfolio Return
+print(paste("Total Portfolio Value on Specific Date:", total_portfolio_value))
+
+
+
+
+
+#####----------------------------------------------------------------------#####
+
+# 
+# #Example of 2023-01-03 to test the code
+# example_R <- demeaned_return[1:252,] #dimension 252x100
+# example_Y <- example_R %*% wEW   #dimension 252 x1 
+# example_X <- example_R %*% N_matrix #dimension 252x99 (252x100 x 100x99)
+# example_model <- lm(example_Y ~ 0 + example_X)
+# example_beta <- coef(model)
+# 
+
+
+#...then calculate the return somehow
 #(From project: This portfolio’s return on 2023-01-03 is 0.366)
