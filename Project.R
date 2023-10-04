@@ -83,6 +83,8 @@ calculate_portfolio_weights <- function(betas, N, we) {
 
 #####----------------------------------------------------------------------#####
 
+# Create an empty object for OLS model
+OLS <- NULL
 
 #For loop for rolling/sliding window
 for(i in 1: num_windows){
@@ -117,11 +119,13 @@ for(i in 1: num_windows){
 #####----------------------------------------------------------------------#####
 
 # Extract coefficients from OLS model
-ols_coefficients <- coef(model)
+ols_coefficients <- coef(OLS)
 # Extract residuals from OLS model
-ols_residuals <- residuals(model)
+ols_residuals <- residuals(OLS)
 # Get summary statistics of OLS model
-ols_summary <- summary(model)
+ols_summary <- summary(OLS)
+
+#####----------------------------------------------------------------------#####
 
 # Assuming you have calculated betas_lasso and betas_ridge using calculate_betas function
 
@@ -159,7 +163,7 @@ print(paste("Total Portfolio Value on Specific Date:", total_portfolio_value))
 
 
 
-#####----------------------------------------------------------------------#####
+#####------OLD CODE-----------------------------------------------------------#####
 
 # 
 # #Example of 2023-01-03 to test the code
