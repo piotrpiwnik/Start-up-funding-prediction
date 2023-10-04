@@ -46,7 +46,7 @@ dim(returnMatrix) #Now the dimension: is 25566 x 100
 num_day <- dim(returnMatrix)[1]
 num_asset <- dim(returnMatrix)[2]
 
-#Demean the return matrix (Demean outside the for loop or inside? This is outside). I think it does not matter/ Piotr
+#Demean the return matrix (Demean outside the for loop or inside? This is outside). 
 demeaned_return <- scale(as.numeric(returnMatrix), center = TRUE, scale = FALSE)
 demeaned_return <- matrix(demeaned_return, nrow = num_day, byrow = TRUE)
 #dim(demeaned_return) --> the same dimension as the original matrix
@@ -118,50 +118,50 @@ for(i in 1: num_windows){
 
 #####----------------------------------------------------------------------#####
 
-# Extract coefficients from OLS model
-ols_coefficients <- coef(OLS)
-# Extract residuals from OLS model
-ols_residuals <- residuals(OLS)
-# Get summary statistics of OLS model
-ols_summary <- summary(OLS)
-
-#####----------------------------------------------------------------------#####
-
-# Assuming you have calculated betas_lasso and betas_ridge using calculate_betas function
-
-# Extract coefficients from Lasso and Ridge models
-lasso_coefficients <- betas_lasso
-ridge_coefficients <- betas_ridge
-
-
-# Calculate daily portfolio return
-daily_portfolio_return <- sum(weights * asset_returns)
-
-# Assuming previous_portfolio_value is the portfolio value from the previous day
-# Calculate total portfolio value for the specific date
-total_portfolio_value <- previous_portfolio_value * (1 + daily_portfolio_return)
-
-
-# Log OLS model information
-print("OLS Coefficients:")
-print(ols_coefficients)
-print("OLS Residuals:")
-print(ols_residuals)
-print("OLS Summary:")
-print(ols_summary)
-
-# Log Lasso and Ridge coefficients
-print("Lasso Coefficients:")
-print(lasso_coefficients)
-print("Ridge Coefficients:")
-print(ridge_coefficients)
-
-# Log Portfolio Return
-print(paste("Total Portfolio Value on Specific Date:", total_portfolio_value))
-
-
-
-
+# # Extract coefficients from OLS model
+# ols_coefficients <- coef(OLS)
+# # Extract residuals from OLS model
+# ols_residuals <- residuals(OLS)
+# # Get summary statistics of OLS model
+# ols_summary <- summary(OLS)
+# 
+# #####----------------------------------------------------------------------#####
+# 
+# # Assuming you have calculated betas_lasso and betas_ridge using calculate_betas function
+# 
+# # Extract coefficients from Lasso and Ridge models
+# lasso_coefficients <- betas_lasso
+# ridge_coefficients <- betas_ridge
+# 
+# 
+# # Calculate daily portfolio return
+# daily_portfolio_return <- sum(weights * asset_returns)
+# 
+# # Assuming previous_portfolio_value is the portfolio value from the previous day
+# # Calculate total portfolio value for the specific date
+# total_portfolio_value <- previous_portfolio_value * (1 + daily_portfolio_return)
+# 
+# 
+# # Log OLS model information
+# print("OLS Coefficients:")
+# print(ols_coefficients)
+# print("OLS Residuals:")
+# print(ols_residuals)
+# print("OLS Summary:")
+# print(ols_summary)
+# 
+# # Log Lasso and Ridge coefficients
+# print("Lasso Coefficients:")
+# print(lasso_coefficients)
+# print("Ridge Coefficients:")
+# print(ridge_coefficients)
+# 
+# # Log Portfolio Return
+# print(paste("Total Portfolio Value on Specific Date:", total_portfolio_value))
+# 
+# 
+# 
+# 
 
 #####------OLD CODE-----------------------------------------------------------#####
 
