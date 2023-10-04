@@ -2,7 +2,8 @@
 packages <- c( "dplyr",
                "quantmod",
                "glmnet",  
-               "here")
+               "here",
+               "MASS")
 
 # Check if packages are installed
 packages_to_install <- packages[!packages %in% installed.packages()[,"Package"]]
@@ -21,7 +22,7 @@ setwd(here())
 
 # Read the CSV file using here() to construct the file path
 df <- read.csv(here("portfolio.data.csv"))
-View(df)
+# View(df)
 
 #####----------------------------------------------------------------------#####
 
@@ -36,7 +37,7 @@ View(df)
 
 #Sample testing, only first 1000 observations
 df <- df[1:1000, ]
-View(df)
+# View(df)
 
 #####----------------------------------------------------------------------#####
 
@@ -89,23 +90,23 @@ calculate_portfolio_weights <- function(betas, N, we) {
 # Create an empty object for OLS model
 OLS <- NULL
 
-#For loop for rolling/sliding window
+# For loop for rolling/sliding window
 for(i in 1: num_windows){
   
-  #Extract data from the demeaned return matrix for the current window
+  # Extract data from the demeaned return matrix for the current window
   window_R <-  demeaned_return[i:(i+window_size -1), , drop =F]
   
-  #Calculate y = return matrix * equally weighted portfolio (matrix multiplication)
-  Y_matrix <- window_R %*% wEW  #dimension Y (252x1)
+  # Calculate y = return matrix * equally weighted portfolio (matrix multiplication)
+  Y_matrix <- window_R %*% wEW  # Dimension Y (252x1)
   
-  #Calculate X = R.N (matrix multiplication)
-  X_matrix <- window_R %*% N_matrix #dimension (252x99)
+  # Calculate X = R.N (matrix multiplication)
+  X_matrix <- window_R %*% N_matrix # Dimension (252x99)
   
-  #Predict y = X.beta without intercept
+  # Predict y = X.beta without intercept
   OLS <- lm(Y_matrix ~ 0 + X_matrix)
   beta <- coef(OLS) 
   
-  #MinVar portfolio: w = wEW - N.beta (matrix multiplication)
+  # MinVar portfolio: w = wEW - N.beta (matrix multiplication)
   w_matrix <- wEW - (N_matrix %*% beta) 
   
   # Convert betas to portfolios using Lasso and Ridge
@@ -117,9 +118,25 @@ for(i in 1: num_windows){
   w_portfolio_lasso <- calculate_portfolio_weights(betas_lasso, N_matrix, wEW)
   w_portfolio_ridge <- calculate_portfolio_weights(betas_ridge, N_matrix, wEW)
   
+  # Calculate y = return matrix * portfolio weights obtained from Lasso regression (matrix multiplication)
+  Y_matrix_lasso <- window_R %*% w_portfolio_lasso  # Dimension Y_lasso (252x1)
+  
+  # Calculate y = return matrix * portfolio weights obtained from Ridge regression (matrix multiplication)
+  Y_matrix_ridge <- window_R %*% w_portfolio_ridge  # Dimension Y_ridge (252x1)
+  
+  # Further operations or analysis can be performed using Y_matrix_lasso and Y_matrix_ridge
+  
 }
 
+  
+  
 #####----------------------------------------------------------------------#####
+
+
+
+
+
+
 
 # # Extract coefficients from OLS model
 # ols_coefficients <- coef(OLS)
