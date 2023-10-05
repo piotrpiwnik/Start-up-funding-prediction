@@ -3,7 +3,9 @@ packages <- c( "dplyr",
                "quantmod",
                "glmnet",  
                "here",
-               "progress")
+               "progress", 
+               "quadprog",
+               "ggplot2")
 
 # Check if packages are installed
 packages_to_install <- packages[!packages %in% installed.packages()[,"Package"]]
@@ -85,7 +87,6 @@ calculate_portfolio_weights <- function(betas, N, we) {
 }
 
 
-
 #####----------------------------------------------------------------------#####
 
 # Create an empty object for OLS model
@@ -97,35 +98,35 @@ pb <- progress_bar$new(total = num_windows, format = "[:bar] :percent :elapsed E
 
 #For loop for rolling/sliding window
 for(i in 1: num_windows){
-  
+
   pb$tick()  # Increment progress bar
-  
-  
+
+
   #Extract data from the demeaned return matrix for the current window
   window_R <-  demeaned_return[i:(i+window_size -1), , drop =F]
-  
+
   #Calculate y = return matrix * equally weighted portfolio (matrix multiplication)
   Y_matrix <- window_R %*% wEW  #dimension Y (252x1)
-  
+
   #Calculate X = R.N (matrix multiplication)
   X_matrix <- window_R %*% N_matrix #dimension (252x99)
-  
+
   #Predict y = X.beta without intercept
   OLS <- lm(Y_matrix ~ 0 + X_matrix)
-  beta <- coef(OLS) 
-  
+  beta <- coef(OLS)
+
   #MinVar portfolio: w = wEW - N.beta (matrix multiplication)
-  w_matrix <- wEW - (N_matrix %*% beta) 
-  
+  w_matrix <- wEW - (N_matrix %*% beta)
+
   # Convert betas to portfolios using Lasso and Ridge
   alpha_lasso <- 1  # Lasso
   alpha_ridge <- 0  # Ridge
   betas_lasso <- calculate_betas(X_matrix, Y_matrix, alpha_lasso)
   betas_ridge <- calculate_betas(X_matrix, Y_matrix, alpha_ridge)
-  
+
   w_portfolio_lasso <- calculate_portfolio_weights(betas_lasso, N_matrix, wEW)
   w_portfolio_ridge <- calculate_portfolio_weights(betas_ridge, N_matrix, wEW)
-  
+
 }
 #####----------------------------------------------------------------------#####
 
@@ -134,54 +135,55 @@ for(i in 1: num_windows){
 
 
 # Calculate daily returns for eW portfolio, Lasso, Ridge, and MinVar portfolios
-return_minvar <- demeaned_return %*% w_portfolio_minvar
+# return_minvar <- demeaned_return %*% w_portfolio_minvar
 return_eW <- demeaned_return %*% wEW
 return_lasso <- demeaned_return %*% w_portfolio_lasso
 return_ridge <- demeaned_return %*% w_portfolio_ridge
 
 
+# Extract the "X" column from the original df
+X_column <- df$X
 
+# Convert the returns matrices to data frames
+return_eW_df <- data.frame(date = X_column, Return_eW = return_eW)
+return_lasso_df <- data.frame(date = X_column, Return_lasso = return_lasso)
+return_ridge_df <- data.frame(date = X_column, Return_ridge = return_ridge)
 
-# Access the 253rd element of each matrix
-element_253_return_eW <- return_eW[253]
-element_253_return_lasso <- return_lasso[253]
-element_253_return_ridge <- return_ridge[253]
-element_253_return_minvar <- return_minvar[253]
-
-# Print or use the values as needed
-print(element_253_return_eW)
-print(element_253_return_lasso)
-print(element_253_return_ridge)
-print(element_253_return_minvar)
+# Merge the data frames based on the "date" column
+merged_df <- merge(return_eW_df, return_lasso_df, by = "date", all.x = TRUE)  # Merge return_eW_df and return_lasso_df
+merged_df <- merge(merged_df, return_ridge_df, by = "date", all.x = TRUE)  # Merge with return_ridge_df
 
 #####----------------------------------------------------------------------#####
 
+#Convert the date column to Date type
+merged_df$date <- as.Date(merged_df$date, format = "%Y-%m-%d")
 
+# Create a line chart with returns over time
+ggplot(merged_df, aes(x = date)) +
+  geom_line(aes(y = Return_eW, color = "eW Return"), size = 1) +
+  geom_line(aes(y = Return_lasso, color = "Lasso Return"), size = 1) +
+  geom_line(aes(y = Return_ridge, color = "Ridge Return"), size = 1) +
+  labs(x = "Date", y = "Returns", color = "Legend") +
+  theme_minimal() +
+  theme(legend.position = "top") +
+  scale_color_manual(values = c("eW Return" = "blue", "Lasso Return" = "green", "Ridge Return" = "red"))
 
+#####----------------------------------------------------------------------#####
 
+# Calculate cumulative returns for each type of return
+merged_df$Cumulative_eW <- cumsum(merged_df$Return_eW)
+merged_df$Cumulative_lasso <- cumsum(merged_df$Return_lasso)
+merged_df$Cumulative_ridge <- cumsum(merged_df$Return_ridge)
 
+# Plot cumulative returns over time
+ggplot(merged_df, aes(x = date)) +
+  geom_line(aes(y = Cumulative_eW, color = "eW Cumulative Return"), size = 1) +
+  geom_line(aes(y = Cumulative_lasso, color = "Lasso Cumulative Return"), size = 1) +
+  geom_line(aes(y = Cumulative_ridge, color = "Ridge Cumulative Return"), size = 1) +
+  labs(x = "Date", y = "Cumulative Returns", color = "Legend") +
+  theme_minimal() +
+  theme(legend.position = "top") +
+  scale_color_manual(values = c("eW Cumulative Return" = "blue", 
+                                "Lasso Cumulative Return" = "green", 
+                                "Ridge Cumulative Return" = "red"))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-# #Example of 2023-01-03 to test the code
-# example_R <- demeaned_return[1:252,] #dimension 252x100
-# example_Y <- example_R %*% wEW   #dimension 252 x1 
-# example_X <- example_R %*% N_matrix #dimension 252x99 (252x100 x 100x99)
-# example_model <- lm(example_Y ~ 0 + example_X)
-# example_beta <- coef(model)
-# 
-
-
-#...then calculate the return somehow
-#(From project: This portfolio’s return on 2023-01-03 is 0.366)
