@@ -3,7 +3,9 @@ packages <- c( "dplyr",
                "quantmod",
                "glmnet",  
                "here",
-               "MASS")
+               "MASS",
+               "foreach",
+               "progress")
 
 # Check if packages are installed
 packages_to_install <- packages[!packages %in% installed.packages()[,"Package"]]
@@ -90,45 +92,47 @@ calculate_portfolio_weights <- function(betas, N, we) {
 # Create an empty object for OLS model
 OLS <- NULL
 
-# For loop for rolling/sliding window
-for(i in 1: num_windows){
+# Set the number of cores to use (adjust this based on your system)
+num_cores <- 4
+
+# Initialize progress bar
+pb <- progress_bar$new(total = num_windows, format = "[:bar] :percent :elapsed ETA: :eta", clear = FALSE)
+
+# Create a parallelized foreach loop with progress bar
+results <- foreach(i = 1:num_windows, .packages = c("MASS", "glmnet", "quantmod"), .combine = 'list') %dopar% {
+  pb$tick()  # Increment progress bar
   
   # Extract data from the demeaned return matrix for the current window
-  window_R <-  demeaned_return[i:(i+window_size -1), , drop =F]
+  window_R <- demeaned_return[i:(i + window_size - 1), , drop = FALSE]
+  Y_matrix <- window_R %*% wEW
+  X_matrix <- window_R %*% N_matrix
   
-  # Calculate y = return matrix * equally weighted portfolio (matrix multiplication)
-  Y_matrix <- window_R %*% wEW  # Dimension Y (252x1)
-  
-  # Calculate X = R.N (matrix multiplication)
-  X_matrix <- window_R %*% N_matrix # Dimension (252x99)
-  
-  # Predict y = X.beta without intercept
   OLS <- lm(Y_matrix ~ 0 + X_matrix)
-  beta <- coef(OLS) 
+  beta <- coef(OLS)
   
-  # MinVar portfolio: w = wEW - N.beta (matrix multiplication)
-  w_matrix <- wEW - (N_matrix %*% beta) 
+  w_matrix <- wEW - (N_matrix %*% beta)
   
-  # Convert betas to portfolios using Lasso and Ridge
-  alpha_lasso <- 1  # Lasso
-  alpha_ridge <- 0  # Ridge
+  alpha_lasso <- 1
+  alpha_ridge <- 0
+  
   betas_lasso <- calculate_betas(X_matrix, Y_matrix, alpha_lasso)
   betas_ridge <- calculate_betas(X_matrix, Y_matrix, alpha_ridge)
   
   w_portfolio_lasso <- calculate_portfolio_weights(betas_lasso, N_matrix, wEW)
   w_portfolio_ridge <- calculate_portfolio_weights(betas_ridge, N_matrix, wEW)
   
-  # Calculate y = return matrix * portfolio weights obtained from Lasso regression (matrix multiplication)
-  Y_matrix_lasso <- window_R %*% w_portfolio_lasso  # Dimension Y_lasso (252x1)
+  Y_matrix_lasso <- window_R %*% w_portfolio_lasso
+  Y_matrix_ridge <- window_R %*% w_portfolio_ridge
   
-  # Calculate y = return matrix * portfolio weights obtained from Ridge regression (matrix multiplication)
-  Y_matrix_ridge <- window_R %*% w_portfolio_ridge  # Dimension Y_ridge (252x1)
-  
-  # Further operations or analysis can be performed using Y_matrix_lasso and Y_matrix_ridge
-  
+  list(Y_matrix_lasso = Y_matrix_lasso, Y_matrix_ridge = Y_matrix_ridge)
 }
 
-  
+# Combine the results and close the progress bar
+Y_matrix_lasso <- do.call(rbind, lapply(results, `[[`, "Y_matrix_lasso"))
+Y_matrix_ridge <- do.call(rbind, lapply(results, `[[`, "Y_matrix_ridge"))
+
+# Further operations or analysis can be performed using Y_matrix_lasso and Y_matrix_ridge
+
   
 #####----------------------------------------------------------------------#####
 
