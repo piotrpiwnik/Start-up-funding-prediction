@@ -84,6 +84,8 @@ calculate_portfolio_weights <- function(betas, N, we) {
   return(w_portfolio)
 }
 
+
+
 #####----------------------------------------------------------------------#####
 
 # Create an empty object for OLS model
@@ -125,21 +127,32 @@ for(i in 1: num_windows){
   w_portfolio_ridge <- calculate_portfolio_weights(betas_ridge, N_matrix, wEW)
   
 }
-
 #####----------------------------------------------------------------------#####
 
 #Okay, so now we have the weights for both lasso and ridge. Now we have to get 
 #the return for each day for eW portfolio, Lasso and Ridge.
 
 
+# Calculate daily returns for eW portfolio, Lasso, Ridge, and MinVar portfolios
+return_minvar <- demeaned_return %*% w_portfolio_minvar
 return_eW <- demeaned_return %*% wEW
 return_lasso <- demeaned_return %*% w_portfolio_lasso
 return_ridge <- demeaned_return %*% w_portfolio_ridge
 
-return_eW
-return_lasso
-return_ridge
 
+
+
+# Access the 253rd element of each matrix
+element_253_return_eW <- return_eW[253]
+element_253_return_lasso <- return_lasso[253]
+element_253_return_ridge <- return_ridge[253]
+element_253_return_minvar <- return_minvar[253]
+
+# Print or use the values as needed
+print(element_253_return_eW)
+print(element_253_return_lasso)
+print(element_253_return_ridge)
+print(element_253_return_minvar)
 
 #####----------------------------------------------------------------------#####
 
