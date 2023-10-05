@@ -21,7 +21,7 @@ setwd(here())
 
 # Read the CSV file using here() to construct the file path
 df <- read.csv(here("portfolio.data.csv"))
-
+View(df)
 
 #####----------------------------------------------------------------------#####
 
@@ -29,13 +29,11 @@ df <- read.csv(here("portfolio.data.csv"))
 df$X <- as.Date(df$X, format = "%Y%m%d")
 df$X <- format(df$X, "%Y-%m-%d")
 
-
+View(df)
 # The data contains four tables. We only need the first one.
 # Subset the dataframe from the beginning to 25566 exclusive. 2022-12-30 is the 25399th row as in the project description.
 df <- df[1:25566, ]
-
-#Additional line for sample testing, only first 260 observations
-df <- df[1:260, ]
+View(df)
 
 #####----------------------------------------------------------------------#####
 
@@ -120,18 +118,54 @@ for(i in 1: num_windows){
 
 #####----------------------------------------------------------------------#####
 
-#Okay, so now we have the weights for both lasso and ridge. Now we have to get 
-#the return for each day for eW portfolio, Lasso and Ridge.
+# # Extract coefficients from OLS model
+# ols_coefficients <- coef(OLS)
+# # Extract residuals from OLS model
+# ols_residuals <- residuals(OLS)
+# # Get summary statistics of OLS model
+# ols_summary <- summary(OLS)
+# 
+# #####----------------------------------------------------------------------#####
+# 
+# # Assuming you have calculated betas_lasso and betas_ridge using calculate_betas function
+# 
+# # Extract coefficients from Lasso and Ridge models
+# lasso_coefficients <- betas_lasso
+# ridge_coefficients <- betas_ridge
+# 
+# 
+# # Calculate daily portfolio return
+# daily_portfolio_return <- sum(weights * asset_returns)
+# 
+# # Assuming previous_portfolio_value is the portfolio value from the previous day
+# # Calculate total portfolio value for the specific date
+# total_portfolio_value <- previous_portfolio_value * (1 + daily_portfolio_return)
+# 
+# 
+# # Log OLS model information
+# print("OLS Coefficients:")
+# print(ols_coefficients)
+# print("OLS Residuals:")
+# print(ols_residuals)
+# print("OLS Summary:")
+# print(ols_summary)
+# 
+# # Log Lasso and Ridge coefficients
+# print("Lasso Coefficients:")
+# print(lasso_coefficients)
+# print("Ridge Coefficients:")
+# print(ridge_coefficients)
+# 
+# # Log Portfolio Return
+# print(paste("Total Portfolio Value on Specific Date:", total_portfolio_value))
+# 
+# 
+# 
+# 
 
+#####------OLD CODE-----------------------------------------------------------#####
 
-return_eW <- 
-
-
-#####----------------------------------------------------------------------#####
-
-
-
-
+# 
 # #Example of 2023-01-03 to test the code
 # example_R <- demeaned_return[1:252,] #dimension 252x100
 # example_Y <- example_R %*% wEW   #dimension 252 x1 
