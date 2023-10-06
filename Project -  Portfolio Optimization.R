@@ -135,6 +135,7 @@ for(i in 1: num_windows){
 # Calculate daily returns for eW portfolio, Lasso, Ridge, and MinVar portfolios
 # return_minvar <- demeaned_return %*% w_portfolio_minvar
 return_eW <- demeaned_return %*% wEW
+return_minVar <- demeaned_return %*% w_matrix
 return_lasso <- demeaned_return %*% w_portfolio_lasso
 return_ridge <- demeaned_return %*% w_portfolio_ridge
 
@@ -144,12 +145,14 @@ X_column <- df$X
 
 # Convert the returns matrices to data frames
 return_eW_df <- data.frame(date = X_column, Return_eW = return_eW)
+return_minVar_df <- data.frame(date = X_column, Return_minVar = return_minVar)
 return_lasso_df <- data.frame(date = X_column, Return_lasso = return_lasso)
 return_ridge_df <- data.frame(date = X_column, Return_ridge = return_ridge)
 
 # Merge the data frames based on the "date" column
 merged_df <- merge(return_eW_df, return_lasso_df, by = "date", all.x = TRUE)  # Merge return_eW_df and return_lasso_df
 merged_df <- merge(merged_df, return_ridge_df, by = "date", all.x = TRUE)  # Merge with return_ridge_df
+merged_df <- merge(merged_df, return_minVar_df, by = "date", all.x = TRUE)  # Merge with return_ridge_df
 
 #####----------------------------------------------------------------------#####
 
@@ -170,45 +173,53 @@ sharpe_ratio_lasso <- mean(merged_df$Excess_Return_lasso) / sd(merged_df$Excess_
 # Calculate Sharpe ratio for Ridge portfolio
 sharpe_ratio_ridge <- mean(merged_df$Excess_Return_ridge) / sd(merged_df$Excess_Return_ridge)
 
-# Print Sharpe ratios
+# Calculate excess returns for MinVar portfolio
+merged_df$Excess_Return_minVar <- merged_df$Return_minVar - rf_rate
+
+# Calculate Sharpe ratio for MinVar portfolio
+sharpe_ratio_minVar <- mean(merged_df$Excess_Return_minVar) / sd(merged_df$Excess_Return_minVar)
+
+# Print Sharpe ratios for all portfolios
 print(paste("Sharpe Ratio for eW Portfolio:", round(sharpe_ratio_eW, 2)))
 print(paste("Sharpe Ratio for Lasso Portfolio:", round(sharpe_ratio_lasso, 2)))
 print(paste("Sharpe Ratio for Ridge Portfolio:", round(sharpe_ratio_ridge, 2)))
+print(paste("Sharpe Ratio for MinVar Portfolio:", round(sharpe_ratio_minVar, 2)))
 
 
+# Calculate excess returns for MinVar portfolio
+merged_df$Excess_Return_minVar <- merged_df$Return_minVar - rf_rate
 
+# Calculate cumulative returns for MinVar portfolio
+merged_df$Cumulative_minVar <- cumsum(merged_df$Return_minVar)
 
 #####----------------------------------------------------------------------#####
 
-#Convert the date column to Date type
-merged_df$date <- as.Date(merged_df$date, format = "%Y-%m-%d")
-
-# Create a line chart with returns over time
+# Line chart with returns over time (including MinVar)
 ggplot(merged_df, aes(x = date)) +
   geom_line(aes(y = Return_eW, color = "eW Return"), size = 1) +
   geom_line(aes(y = Return_lasso, color = "Lasso Return"), size = 1) +
   geom_line(aes(y = Return_ridge, color = "Ridge Return"), size = 1) +
+  geom_line(aes(y = Return_minVar, color = "MinVar Return"), size = 1) +  # Add MinVar Return
   labs(x = "Date", y = "Returns", color = "Legend") +
   theme_minimal() +
   theme(legend.position = "top") +
-  scale_color_manual(values = c("eW Return" = "blue", "Lasso Return" = "green", "Ridge Return" = "red"))
+  scale_color_manual(values = c("eW Return" = "blue", 
+                                "Lasso Return" = "green", 
+                                "Ridge Return" = "red",
+                                "MinVar Return" = "purple"))  # Assign a color for MinVar Return
 
 #####----------------------------------------------------------------------#####
 
-# Calculate cumulative returns for each type of return
-merged_df$Cumulative_eW <- cumsum(merged_df$Return_eW)
-merged_df$Cumulative_lasso <- cumsum(merged_df$Return_lasso)
-merged_df$Cumulative_ridge <- cumsum(merged_df$Return_ridge)
-
-# Plot cumulative returns over time
+# Plot cumulative returns over time (including MinVar)
 ggplot(merged_df, aes(x = date)) +
   geom_line(aes(y = Cumulative_eW, color = "eW Cumulative Return"), size = 1) +
   geom_line(aes(y = Cumulative_lasso, color = "Lasso Cumulative Return"), size = 1) +
   geom_line(aes(y = Cumulative_ridge, color = "Ridge Cumulative Return"), size = 1) +
+  geom_line(aes(y = Cumulative_minVar, color = "MinVar Cumulative Return"), size = 1) +  # Add MinVar Cumulative Return
   labs(x = "Date", y = "Cumulative Returns", color = "Legend") +
   theme_minimal() +
   theme(legend.position = "top") +
   scale_color_manual(values = c("eW Cumulative Return" = "blue", 
                                 "Lasso Cumulative Return" = "green", 
-                                "Ridge Cumulative Return" = "red"))
-
+                                "Ridge Cumulative Return" = "red",
+                                "MinVar Cumulative Return" = "purple"))  # Assign a color for MinVar Cumulative Return
