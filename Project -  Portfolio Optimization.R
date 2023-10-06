@@ -45,7 +45,7 @@ df <- df[25148:25566,]
 #Formating the Return Matrix, excluding the first column (date)
 returnMatrix <- df[,-1]
 returnMatrix <- as.matrix(returnMatrix)
-dim(returnMatrix) #Now the dimension: is 25566 x 100
+dim(returnMatrix) #Now the dimension: is 419 x 100
 
 #Store Numbers of Observations and Assets (for dimensions of matrices)
 num_day <- dim(returnMatrix)[1]
@@ -54,7 +54,7 @@ num_asset <- dim(returnMatrix)[2]
 #Demean the return matrix (Demean outside the for loop or inside? This is outside). 
 demeaned_return <- scale(as.numeric(returnMatrix), center = TRUE, scale = FALSE)
 demeaned_return <- matrix(demeaned_return, nrow = num_day, byrow = TRUE)
-#dim(demeaned_return) --> the same dimension as the original matrix
+dim(demeaned_return) #--> the same dimension as the original matrix - 419x100
 
 #Generate the equally-weighted portfolio wE (dimension: 100x1)
 eqWeight <- 1/num_asset
@@ -70,6 +70,7 @@ num_windows <- num_day - window_size +1
 
 #####----------------------------------------------------------------------#####
 
+#This part needs to be edited
 
 # Function to calculate betas using Lasso or Ridge regression
 calculate_betas <- function(X, y, alpha) {
@@ -88,9 +89,6 @@ calculate_portfolio_weights <- function(betas, N, we) {
 
 
 #####----------------------------------------------------------------------#####
-
-# Create an empty object for OLS model
-OLS <- NULL
 
 # Initialize progress bar
 pb <- progress_bar$new(total = num_windows, format = "[:bar] :percent :elapsed ETA: :eta", clear = FALSE)
@@ -152,6 +150,33 @@ return_ridge_df <- data.frame(date = X_column, Return_ridge = return_ridge)
 # Merge the data frames based on the "date" column
 merged_df <- merge(return_eW_df, return_lasso_df, by = "date", all.x = TRUE)  # Merge return_eW_df and return_lasso_df
 merged_df <- merge(merged_df, return_ridge_df, by = "date", all.x = TRUE)  # Merge with return_ridge_df
+
+#####----------------------------------------------------------------------#####
+
+# Assuming risk-free rate is available and stored in a variable called rf_rate
+rf_rate <- 0.02  # Replace this with your actual risk-free rate
+
+# Calculate excess returns for eW portfolio, Lasso portfolio, and Ridge portfolio
+merged_df$Excess_Return_eW <- merged_df$Return_eW - rf_rate
+merged_df$Excess_Return_lasso <- merged_df$Return_lasso - rf_rate
+merged_df$Excess_Return_ridge <- merged_df$Return_ridge - rf_rate
+
+# Calculate Sharpe ratio for eW portfolio
+sharpe_ratio_eW <- mean(merged_df$Excess_Return_eW) / sd(merged_df$Excess_Return_eW)
+
+# Calculate Sharpe ratio for Lasso portfolio
+sharpe_ratio_lasso <- mean(merged_df$Excess_Return_lasso) / sd(merged_df$Excess_Return_lasso)
+
+# Calculate Sharpe ratio for Ridge portfolio
+sharpe_ratio_ridge <- mean(merged_df$Excess_Return_ridge) / sd(merged_df$Excess_Return_ridge)
+
+# Print Sharpe ratios
+print(paste("Sharpe Ratio for eW Portfolio:", round(sharpe_ratio_eW, 2)))
+print(paste("Sharpe Ratio for Lasso Portfolio:", round(sharpe_ratio_lasso, 2)))
+print(paste("Sharpe Ratio for Ridge Portfolio:", round(sharpe_ratio_ridge, 2)))
+
+
+
 
 #####----------------------------------------------------------------------#####
 
