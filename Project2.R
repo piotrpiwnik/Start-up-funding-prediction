@@ -3,7 +3,8 @@ packages <- c( "dplyr",
                "quantmod",
                "glmnet",  
                "here",
-               "progress")
+               "progress",
+               "ggplot2")
 
 # Check if packages are installed
 packages_to_install <- packages[!packages %in% installed.packages()[,"Package"]]
@@ -18,8 +19,7 @@ lapply(packages, require, character.only = TRUE)
 
 
 # Set the working directory to the project root using here()
-setwd("C:/Users/swiet/OneDrive/Pulpit/Study/Exchange/Predictive Analytics")
-
+setwd(here())
 
 # Read the CSV file using here() to construct the file path
 df <- read.csv("./portfolio.data.csv")
@@ -97,11 +97,13 @@ pb <- progress_bar$new(total = num_windows, format = "[:bar] :percent :elapsed E
 sum_wEW <- c()
 sum_lasso <- c()
 sum_ridge <- c()
+sum_minVar <- c()
 
 # Create vector with Sharpe Ratio 
 shr_wEW <- c()
 shr_lasso <- c()
 shr_ridge <- c()
+shr_minVar <- c()
 
 #For loop for rolling/sliding window
 for(i in 1: num_windows){
@@ -137,24 +139,99 @@ for(i in 1: num_windows){
   return_eW <- demeaned_return %*% wEW
   return_lasso <- demeaned_return %*% w_portfolio_lasso
   return_ridge <- demeaned_return %*% w_portfolio_ridge
+  return_minVar <- demeaned_return %*% w_matrix
   
   sum_wEW <- sum_wEW + sum(return_eW)
   sum_lasso <- sum_lasso + sum(return_lasso)
   sum_ridge <- sum_ridge + sum(return_ridge)
-  
-  shr_wEW <- shr_wEW  + sum(return_eW)/sd(return_eW)
-  shr_lasso <- shr_lasso + sum(return_lasso)/sd(return_lasso)
-  shr_ridge <- shr_ridge + sum(return_ridge)/sd(return_ridge)
+  sum_minVar <- sum_minVar + sum(return_minVar)
   
 }
 
-#####----------------------------------------------------------------------#####
-
-#Okay, so now we have the weights for both lasso and ridge. Now we have to get 
-#the return for each day for eW portfolio, Lasso and Ridge.
+#####-------Creating merged df with the results-------------------------------------------------#####
 
 
-#####----------------------------------------------------------------------#####
+# Extract the "X" column from the original df
+X_column <- df$X
+
+# Convert the returns matrices to data frames
+return_eW_df <- data.frame(date = X_column, Return_eW = return_eW)
+return_minVar_df <- data.frame(date = X_column, Return_minVar = return_minVar)
+return_lasso_df <- data.frame(date = X_column, Return_lasso = return_lasso)
+return_ridge_df <- data.frame(date = X_column, Return_ridge = return_ridge)
+
+# Merge the data frames based on the "date" column
+merged_df <- merge(return_eW_df, return_lasso_df, by = "date", all.x = TRUE)  # Merge return_eW_df and return_lasso_df
+merged_df <- merge(merged_df, return_ridge_df, by = "date", all.x = TRUE)  # Merge with return_ridge_df
+merged_df <- merge(merged_df, return_minVar_df, by = "date", all.x = TRUE)  # Merge with return_ridge_df
+
+# Filter merged_df from 2023-01-03 till the end of the data set (as dates before 2023-01-03 are training data only)
+filtered_df <- merged_df[merged_df$date >= "2023-01-03", ]
+
+# Calculate Sharpe ratios
+shr_ew <- mean(filtered_df$Return_eW) / sd(filtered_df$Return_eW)
+shr_lasso <- mean(filtered_df$Return_lasso) / sd(filtered_df$Return_lasso)
+shr_ridge <- mean(filtered_df$Return_ridge) / sd(filtered_df$Return_ridge) 
+shr_minVar <- mean(filtered_df$Return_minVar) / sd(filtered_df$Return_minVar)
+
+# Create a data frame for Sharpe ratios
+sharpe_ratios <- data.frame(Model = c("Equal Weight", "Lasso", "Ridge", "MinVar"),
+                            Sharpe_Ratio = c(shr_ew, shr_lasso, shr_ridge, shr_minVar))
+
+# Create a bar plot
+ggplot(sharpe_ratios, aes(x = Model, y = Sharpe_Ratio, fill = Model)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Sharpe Ratios of Different Models",
+       x = "Model",
+       y = "Sharpe Ratio") +
+  theme_minimal() +
+  theme(legend.position = "none")
+  
+
+filtered_df$date <- as.Date(filtered_df$date, format = "%Y-%m-%d")
+
+#####-------Graph with the test returns -------------------------------------------------#####
+
+
+# Line chart with returns over time (including MinVar)
+ggplot(filtered_df, aes(x = date)) +
+  geom_line(aes(y = Return_eW, color = "eW Return"), size = 1) +
+  geom_line(aes(y = Return_lasso, color = "Lasso Return"), size = 1) +
+  geom_line(aes(y = Return_ridge, color = "Ridge Return"), size = 1) +
+  geom_line(aes(y = Return_minVar, color = "MinVar Return"), size = 1) +  # Add MinVar Return
+  labs(x = "Date", y = "Returns", color = "Legend") +
+  theme_minimal() +
+  theme(legend.position = "top") +
+  scale_color_manual(values = c("eW Return" = "blue", 
+                                "Lasso Return" = "green", 
+                                "Ridge Return" = "red",
+                                "MinVar Return" = "purple"))  # Assign a color for MinVar Return
+
+
+#####-------Graph with cmnmulative test returns -------------------------------------------------#####
+
+filtered_df$Cumulative_eW <- cumsum(filtered_df$Return_eW)
+filtered_df$Cumulative_lasso <- cumsum(filtered_df$Return_lasso)
+filtered_df$Cumulative_ridge <- cumsum(filtered_df$Return_ridge)
+filtered_df$Cumulative_minVar <- cumsum(filtered_df$Return_minVar)
+
+
+# Plot cumulative returns over time (including MinVar)
+ggplot(filtered_df, aes(x = date)) +
+  geom_line(aes(y = Cumulative_eW, color = "eW Cumulative Return"), size = 1) +
+  geom_line(aes(y = Cumulative_lasso, color = "Lasso Cumulative Return"), size = 1) +
+  geom_line(aes(y = Cumulative_ridge, color = "Ridge Cumulative Return"), size = 1) +
+  geom_line(aes(y = Cumulative_minVar, color = "MinVar Cumulative Return"), size = 1) +  # Add MinVar Cumulative Return
+  labs(x = "Date", y = "Cumulative Returns", color = "Legend") +
+  theme_minimal() +
+  theme(legend.position = "top") +
+  scale_color_manual(values = c("eW Cumulative Return" = "blue", 
+                                "Lasso Cumulative Return" = "green", 
+                                "Ridge Cumulative Return" = "red",
+                                "MinVar Cumulative Return" = "purple"))  # Assign a color for MinVar Cumulative Return
+
+
+#####-------Testing the results based on the example from project description------------------------------------#####
 
 # #Example of 2023-01-03 to test the code
 example_return <- as.numeric(returnMatrix[1:252,1:6])
